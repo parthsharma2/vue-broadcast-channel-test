@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      Date:
+      <input v-model="date" type="date" name="date" id="input-date" /> <br />
+      Name:
+      <input v-model="name" type="text" name="name" id="input-name" /> <br />
+      Address:
+      <input v-model="address" type="text" name="address" id="input-address" />
+      <br />
+      <button @click="sendData">Submit</button>
+      <br />
+      <ol>
+        <li v-for="entry in entries">
+          {{entry.date}} | {{entry.name}} | {{entry.address}}
+        </li>
+      </ol>
+    </div>
+  </body>
+  <script>
+    var app = new Vue({
+      el: "#app",
+      data() {
+        return {
+          date: "",
+          name: "",
+          address: "",
+          entries: [],
+          bc: new BroadcastChannel("test_channel"),
+        };
+      },
+      methods: {
+        sendData() {
+          const payload = {
+            id: Date.now(),
+            date: this.date,
+            name: this.name,
+            address: this.address,
+          };
+          this.entries.push(payload);
+          this.bc.postMessage({
+            type: "add",
+            payload,
+          });
+        },
+        handleMessage(e) {
+          const { type, payload } = e.data;
+
+          switch (type) {
+            case "add":
+              this.entries.push(payload);
+              break;
+            case "del":
+              this.entries = this.entries.filter((item) => {
+                return item.id != payload.id;
+              });
+              break;
+            default:
+              console.log("Unknown msg type", e);
+          }
+        },
+      },
+      created() {
+        this.bc.onmessage = this.handleMessage;
+      },
+    });
+  </script>
+</html>

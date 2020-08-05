@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"
+    />
+  </head>
+  <body>
+    <div id="app">
+      {{ message }}
+      <button onclick="window.open('form.html', '_blank')">Open Form</button>
+      <br />
+      <template>
+        <el-table
+          :data="tableData"
+          style="width: 100%;"
+          empty-text="Empty Table!"
+        >
+          <el-table-column prop="date" label="Date" width="180">
+          </el-table-column>
+          <el-table-column prop="name" label="Name" width="180">
+          </el-table-column>
+          <el-table-column prop="address" label="Address"> </el-table-column>
+          <el-table-column label="Delete">
+            <template slot-scope="scope">
+              <el-button
+                size="mini"
+                type="danger"
+                @click="handleDelete(scope.$index, scope.row, scope.column)"
+              >
+                <i class="el-icon-delete"></i>
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </template>
+      {{ tableData }}
+    </div>
+  </body>
+  <script>
+    var app = new Vue({
+      el: "#app",
+      data() {
+        return {
+          message: "hello",
+          tableData: [],
+          bc: new BroadcastChannel("test_channel"),
+        };
+      },
+      methods: {
+        handleMessage(e) {
+          const { type, payload } = e.data;
+
+          switch (type) {
+            case "add":
+              this.tableData.push(payload);
+              break;
+            case "del":
+              this.tableData.filter((item) => {
+                return (
+                  item.date != payload.date &&
+                  item.name != payload.name &&
+                  item.address != payload.address
+                );
+              });
+              break;
+            default:
+              console.log("Unknown msg type", e);
+          }
+        },
+        handleDelete(index, row) {
+          this.tableData = this.tableData.filter((item) => {
+            return item.id != row.id;
+          });
+
+          this.bc.postMessage({
+            type: "del",
+            payload: {
+              id: row.id,
+              date: row.date,
+              name: row.name,
+              address: row.address,
+            },
+          });
+        },
+      },
+      created() {
+        this.bc.onmessage = this.handleMessage;
+      },
+    });
+  </script>
+</html>
